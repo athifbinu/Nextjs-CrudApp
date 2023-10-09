@@ -4,7 +4,7 @@ import Provider from '../../../../components/Provider';
 import { signIn } from 'next-auth/react';
 import { connectToDB } from "@/utils/Db";
 
-
+import User from "@/models/user";
 
 
 
@@ -16,11 +16,33 @@ const handler=NextAuth({
         })
     ],
     async session({session}) {
+
+        const sessionUser=await User.findOne({
+            email:session.user.email
+        })
+
+        session.user.id=sessionUser._id.toString();
+
+        return session;
+        
         
     },
     async signIn({profile}) {
         try{
              await connectToDB()
+
+             const userExists=await User.findOne({
+                email:profile.email
+             }) 
+
+             if(!userExists) {
+                await User.create({
+                    email:profile.email,
+                     username:profile.name.replace("","").
+                     toLowercase(),
+                     Image:profile.picture
+                })
+             }
 
             return true
         }
